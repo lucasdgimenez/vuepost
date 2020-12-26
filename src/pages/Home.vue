@@ -16,7 +16,8 @@
         <h1>{{post.autor}}</h1>
         <p>{{post.content | postLength}}</p>
         <div class="action-post">
-          <button>{{post.likes === 0 ? 'Curtir' : post.likes + ' Curtidas'}}</button>
+          <button @click="likePost(post.id, post.likes)">
+            {{post.likes === 0 ? 'Curtir' : post.likes + ' Curtidas'}}</button>
           <button>Veja post completo</button>
         </div>
       </article>
@@ -42,6 +43,7 @@ export default {
     const user = localStorage.getItem('vuepost');
     this.user = JSON.parse(user);
     await firebase.firestore().collection('posts')
+    .orderBy('created', 'desc')
     .onSnapshot((doc) => {
       this.posts = []
       doc.forEach((item) => {
@@ -78,6 +80,34 @@ export default {
       })
       .catch((error)=> {
         console.log("Erro ao criar post: "+ error)
+      })
+    },
+    async likePost(id, likes) {
+      const userId = this.user.uid;
+      //cria uma id nova do id user e id post
+      const docId = `${userId}_${id}`
+      //checando se o post ja foi curtido
+      const doc = await firebase.firestore().collection('likes')
+      .doc(docId).get()
+      if(doc.exists) { //se existir, é porque ja dei like
+        await firebase.firestore().collection('posts')
+        .doc(id).update({
+          likes: likes - 1
+        })
+        await firebase.firestore().collection('likes')
+        .doc(docId).delete();
+        return;
+      } 
+      //cria o like
+      await firebase.firestore().collection('posts')
+      .doc(docId).set({
+        postId: id,
+        userId: userId
+      })
+      //soma o like
+      await firebase.firestore().collection('posts')
+      .doc(id).update({
+        likes: likes + 1
       })
     }
   },
