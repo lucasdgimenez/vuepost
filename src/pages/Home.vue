@@ -13,30 +13,38 @@
 
     <div class="postarea" v-else>
       <article class="post" v-for="post in posts" :key="post.id">
-        <h1>{{post.autor}}</h1>
+        <router-link tag="h1" :to="`/perfil/${post.userId}`">{{post.autor}}</router-link>
         <p>{{post.content | postLength}}</p>
         <div class="action-post">
           <button @click="likePost(post.id, post.likes)">
             {{post.likes === 0 ? 'Curtir' : post.likes + ' Curtidas'}}</button>
-          <button>Veja post completo</button>
+          <button @click="togglePostModal(post)">Veja post completo</button>
         </div>
       </article>
-
     </div>
+
+    <Modal v-if="showPostModal" :post="fullPost" @close="togglePostModal()"/>
   </div>
 </template>
 
 <script>
 import firebase from "../services/firebaseConnection"
+import Modal from "../components/Modal"
+
 
 export default {
   name: 'Home',
+  components: {
+    Modal
+  },
   data() {
     return {
       input: '',
       user: {},
       loading: true,
-      posts: []
+      posts: [],
+      showPostModal: false,
+      fullPost: {}
     }
   },
   async created() {
@@ -99,7 +107,7 @@ export default {
         return;
       } 
       //cria o like
-      await firebase.firestore().collection('posts')
+      await firebase.firestore().collection('likes')
       .doc(docId).set({
         postId: id,
         userId: userId
@@ -109,6 +117,14 @@ export default {
       .doc(id).update({
         likes: likes + 1
       })
+    },
+    togglePostModal(post) {
+      this.showPostModal = !this.showPostModal;
+      if(this.showPostModal) {
+        this.fullPost = post;
+      } else {
+        this.fullPost = {};
+      }
     }
   },
   filters: {

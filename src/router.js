@@ -26,7 +26,7 @@ const router = new Router({
       }
     },
     {
-      path: "/profile/:userid",
+      path: "/perfil/:userid",
       component: Profile,
       props: true,
       meta: {
